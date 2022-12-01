@@ -1,0 +1,274 @@
+---
+title: 'Case Study 2: How can a wellness company play it smart?'
+author: "Coursera"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Table of Content
+
+
+#### 1. Introduction
+
+#### 2. Ask Phase
+
+#### 3.Prepare Phase
+
+#### 4. Processing Phae
+
+#### 5. Analyze Phase
+
+#### 6. Share Phase Act Phase
+
+
+## Introduction
+#### Bellabeat is a high-tech manufacturer of health-focused products for women. Their aim is to analyze the usage of their products in an effort to gain insight into how people are already using smart devices. In turn, this analysis should produce high-level recommendations to stakeholders with the aim of increasing their marketing strategies and becoming a larger player in the global smart device market. Some key questions that will be used to guide this analysis are : What are some trends in Fitbit smart device usage? How could these trends influence the Bellabeat marketing strategy?
+
+
+## Ask Phase
+
+### The Business Task
+
+#### Identify and analyze usage patterns and trends of their fitness smart devices, in an effort to make high-level- recommendations that will lead to better marketing strategies and decisions to become a larger player in the global smart device market.
+
+### Key Stakeholders
+
+#### Urška Sršen: Bellabeat’s co-founder and Chief Creative Officer, Sando Mur: Mathematician and Bellabeat’s cofounder and Bellabeat’s marketing analytics team.
+
+
+## Prepare Phase
+
+### Data Accessibility and Privacy
+
+#### The data source is a public dataset from Fitbit Fitness that explores smart device users’ daily habits. The Fitbit Fitness Tracker Data is a Public Domain, dataset made available through Mobius. It is a Kaggle data set containing personal fitness tracker from thirty Fitbit users generated from a survey. Thirty eligible Fitbit users consented to the submission of personal tracker data, including minute-level output for physical activity, heart rate, and sleep monitoring. It includes information about daily activity, steps, and heart rate that can be used to explore users’ habits. It is a good data set that can be used to analyze the behavior of the users, and it has a wide variety of information. It is reliable, original, credible and current.
+
+### Data Limitations
+
+#### The sample size for this survey is very low, 30 users is not an ideal sample size where multiple independent variables are involved. Especially when health and lifestyle data is varied across different facets of society. Insights gained may not apply to all.The weight dataset only contains information on 8 persons and is very limited, so it will not be used throughout this analysis.
+
+
+## Packages and libraries
+
+#### First, let's install and load packages that will be used through the dataset.
+
+
+```{r}
+install.packages("tidyverse", repos = "http://cran.us.r-project.org")
+install.packages("janitor", repos = "http://cran.us.r-project.org")
+install.packages("skimr", repos = "http://cran.us.r-project.org")
+install.packages("dplyr", repos = "http://cran.us.r-project.org")
+install.packages("lubridate", repos = "http://cran.us.r-project.org")
+install.packages("ggplot2", repos = "http://cran.us.r-project.org")
+install.packages("ggrepel", repos = "http://cran.us.r-project.org")
+```
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(skimr)
+library(dplyr)
+library(lubridate)
+library(ggplot2)
+library(ggrepel)
+```
+
+## Importing Data
+
+#### We will be using the FitBit dataset, which was already downloaded. I also looked at the database before upload it. I will be using the data from dailyActivity_merged and sleepDay_merged.csv files as the information from most of the same files were located in dailyActivity_merged file. The weightLogInfo data is very limited and will not be used.
+
+```{r}
+activity <- read.csv("/Users/rising.volkan007/Desktop/Fitabase Data 4.12.16-5.12.16/dailyActivity_merged.csv" )
+calories <- read_csv("/Users/rising.volkan007/Desktop/Fitabase Data 4.12.16-5.12.16/hourlyCalories_merged.csv" )
+intensities <- read_csv("/Users/rising.volkan007/Desktop/Fitabase Data 4.12.16-5.12.16/hourlyIntensities_merged.csv" )
+sleep <- read.csv("/Users/rising.volkan007/Desktop/Fitabase Data 4.12.16-5.12.16/sleepDay_merged.csv")
+weight <- read_csv("/Users/rising.volkan007/Desktop/Fitabase Data 4.12.16-5.12.16/weightLogInfo_merged.csv")
+```
+
+
+## Processing Phase
+
+### Viewing our Data
+
+#### Let's review the data and ensure that it was uploaded correctly. We will look look for data type errors, duplicates, validation errors, null values, data inconsitency, etc.
+
+```{r}
+head(activity)
+head(sleep)
+head(intensities)
+```
+
+
+### There may be duplicates in the dataset, we will use the duplicate function to check and remove them
+
+```{r}
+n_distinct(activity$Id)
+n_distinct(calories$Id)
+n_distinct(intensities$Id)
+n_distinct(sleep$Id)
+n_distinct(weight$Id)
+```
+
+
+### This information tells us about number participants in each data sets.
+
+#### There is 33 participants in the activity, calories and intensities data sets, 24 in the sleep and only 8 in the weight data set. 8 participants is not significant to make any recommendations and conclusions based on this data.
+
+
+```{r}
+sum(duplicated(activity))
+sum(duplicated(calories))
+sum(duplicated(sleep))
+```
+
+### Cleaning the Data
+
+#### Let's ensure that the names for each variable are concise and the data types and formats are correct by using the clean_names and rename_with function.
+
+#### Let's also rename the date variable located in the daily_activity and daily_sleep table. They will be used to merge both tables together. The format of each variable needs to be in date format in order for the merge to be succesful.
+
+
+```{r}
+# intensities
+intensities$ActivityHour=as.POSIXct(intensities$ActivityHour, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+intensities$time <- format(intensities$ActivityHour, format = "%H:%M:%S")
+intensities$date <- format(intensities$ActivityHour, format = "%m/%d/%y")
+# calories
+calories$ActivityHour=as.POSIXct(calories$ActivityHour, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+calories$time <- format(calories$ActivityHour, format = "%H:%M:%S")
+calories$date <- format(calories$ActivityHour, format = "%m/%d/%y")
+# activity
+activity$ActivityDate=as.POSIXct(activity$ActivityDate, format="%m/%d/%Y", tz=Sys.timezone())
+activity$date <- format(activity$ActivityDate, format = "%m/%d/%y")
+# sleep
+sleep$SleepDay=as.POSIXct(sleep$SleepDay, format="%m/%d/%Y %I:%M:%S %p", tz=Sys.timezone())
+sleep$date <- format(sleep$SleepDay, format = "%m/%d/%y")
+```
+
+
+```{r}
+head(activity)
+head(sleep)
+head(intensities)
+head(calories)
+```
+
+## Analyze Phase
+
+#### Let's go ahead and analyze the trends of FitBit users and determine if this insight will be beneficial to achieving the business task.
+
+
+```{r}
+# activity
+activity %>%  
+  select(TotalSteps,
+         TotalDistance,
+         SedentaryMinutes, Calories) %>%
+  summary()
+
+# explore num of active minutes per category
+activity %>%
+  select(VeryActiveMinutes, FairlyActiveMinutes, LightlyActiveMinutes) %>%
+  summary()
+
+# calories
+calories %>%
+  select(Calories) %>%
+  summary()
+# sleep
+sleep %>%
+  select(TotalSleepRecords, TotalMinutesAsleep, TotalTimeInBed) %>%
+  summary()
+# weight
+weight %>%
+  select(WeightKg, BMI) %>%
+  summary()
+```
+
+
+#### Average total steps per day are 7638 which a little bit less for having health benefits for according to the CDC research. They found that taking 8,000 steps per day was associated with a 51% lower risk for all-cause mortality (or death from all causes). Taking 12,000 steps per day was associated with a 65% lower risk compared with taking 4,000 steps.
+
+
+### Merging Data
+
+#### Before beginning to visualize the data, I need to merge two data sets. I’m going to merge (inner join) activity and sleep on columns Id and date (that I previously created after converting data to date time format).
+
+
+```{r}
+merged_data <- merge(sleep, activity, by=c('Id', 'date'))
+head(merged_data)
+```
+
+```{r}
+ggplot(data=activity, aes(x=TotalSteps, y=Calories)) + 
+  geom_point() + geom_smooth() + labs(title="Total Steps vs. Calories")
+```
+
+
+#### I see positive correlation here between Total Steps and Calories, which is obvious - the more active we are, the more calories we burn.
+
+```{r}
+ggplot(data=sleep, aes(x=TotalMinutesAsleep, y=TotalTimeInBed)) + 
+  geom_point()+ labs(title="Total Minutes Asleep vs. Total Time in Bed")
+```
+
+#### The relationship between Total Minutes Asleep and Total Time in Bed looks linear. So if the Bellabeat users want to improve their sleep, we should consider using notification to go to sleep.
+
+
+```{r}
+int_new <- intensities %>%
+  group_by(time) %>%
+  drop_na() %>%
+  summarise(mean_total_int = mean(TotalIntensity))
+
+ggplot(data=int_new, aes(x=time, y=mean_total_int)) + geom_histogram(stat = "identity", fill='darkblue') +
+  theme(axis.text.x = element_text(angle = 90)) +
+  labs(title="Average Total Intensity vs. Time")
+```
+
+
+
+#### 1. After visualizing Total Intensity hourly, I found out that people are more active between 5 am and 10pm.
+
+#### 2. Most activity happens between 5 pm and 7 pm - I suppose, that people go to a gym or for a walk after finishing work. We can use this time in the Bellabeat app to remind and motivate users to go for a run or walk.
+
+#### Let's look at the relationship between Total Minutes Asleep and Sedentry Minutes.
+
+
+```{r}
+ggplot(data=merged_data, aes(x=TotalMinutesAsleep, y=SedentaryMinutes)) + 
+geom_point(color='darkblue') + geom_smooth() +
+  labs(title="Minutes Asleep vs. Sedentary Minutes")
+```
+
+
+#### Here we can clearly see the negative relationship between Sedentary Minutes and Sleep time.
+
+#### As an idea: if Bellabeat users want to improve their sleep, Bellabeat app can recommend reducing sedentary time.
+
+#### Keep in mind that we need to support this insights with more data, because correlation between some data doesn’t mean causation.
+
+
+
+### Share Phase
+
+#### Summarizing recommendations for the business
+
+##### As we already know, collecting data on activity, sleep, stress, and reproductive health has allowed Bellabeat to empower women with knowledge about their own health and habits. Since it was founded in 2013, Bellabeat has grown rapidly and quickly positioned itself as a tech-driven wellness company for women.
+
+#### Recommendations for the Bellabeat Spring Device:
+
+##### Adjust the algorithm in the Spring bottle tracking device to sync with the Ivy health tracker to alert users "aggresively" between 5 pm and 7 pm to increase their water intake.
+
+##### Women who work full-time jobs (according to the hourly intensity data) and spend a lot of time at the computer/in a meeting/ focused on work they are doing (according to the sedentary time data).
+
+##### These women do some light activity to stay healthy (according to the activity type analysis). Even though they need to improve their everyday activity to have health benefits. They might need some knowledge about developing healthy habits or motivation to keep going.
+
+##### Now is an excellent time to start a virtual community. Users will feel more supported if community-building is emphasized throughout the messaging and campaign.
+
+##### Sharing success stories and testimonials with your audience will always be relevant. Success stories, user feedback, and reviews all aid in the development of trust among your target audience.
+
+##### The pandemic caused a lot of losses, now that it is almost in the past, Bellabeat has the option to remarket her products to current users or those who have recently stopped using their products.
