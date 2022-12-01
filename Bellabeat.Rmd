@@ -1,6 +1,6 @@
 ---
 title: 'Case Study 2: How can a wellness company play it smart?'
-author: "Coursera"
+author: "Khalid Md Ashik"
 date: "`r Sys.Date()`"
 output: html_document
 ---
